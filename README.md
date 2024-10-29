@@ -32,5 +32,10 @@ Der DaHo-Algorithmus verarbeitet die Eingabe in mehreren Schritten:
 Der folgende Aufruf erzeugt einen Hash für die Eingabe "Hallo":
 
 ```java
-String hashValue = DaHo.hash("Hallo");
+String hashValue = DaHoEncryption.hash("Hallo");
 System.out.println("Hash-Wert: " + hashValue);
+```
+
+Das ist der Output: "6c78db2014e7da662e2cba57d32ac779ec6b58e29918d0d170e4e5fc49c7759d513abca7d1079addda43fae7e749bf92b1d6ca1d6915999d2885d26348196fbDaHo"
+
+Der DaHo-Hash wird gekennzeichnet durch das "DaHo" am ende des Hashes.
