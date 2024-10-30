@@ -10,4 +10,5 @@ This software is provided "AS IS," without warranty of any kind, express or impl
 fitness for a particular purpose, and non-infringement. In no event shall the author be liable for any claim, damages, or other liability, whether in an
 action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.
 
-Any form of public use, commercial use, distribution, or modification by anyone other than the author is strictly prohibited and subject to legal action.
+Any form of public use, commercial use, distribution, or modification by anyone other than the author is strictly prohibited and subject to
+legal action.
