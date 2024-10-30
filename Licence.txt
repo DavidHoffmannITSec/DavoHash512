@@ -1,0 +1,14 @@
+NO LICENSE
+
+Copyright (c) 2024 David Hoffmann
+
+All rights reserved. This code and any associated documentation are proprietary and confidential. Unauthorized copying, modification, distribution,
+and any other form of use of this software or any portion of it is strictly prohibited. The software is provided solely for personal, private,
+and non-commercial use by the author.
+
+This software is provided "AS IS," without warranty of any kind, express or implied, including but not limited to the warranties of merchantability,
+fitness for a particular purpose, and non-infringement. In no event shall the author be liable for any claim, damages, or other liability, whether in an
+action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.
+
+Any form of public use, commercial use, distribution, or modification by anyone other than the author is strictly prohibited and subject to
+legal action.
