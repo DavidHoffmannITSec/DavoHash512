@@ -15,7 +15,7 @@ Der Davo-Algorithmus verarbeitet die Eingabe in mehreren Schritten:
    Bei größeren Eingaben wird die Verarbeitung parallelisiert. Das bedeutet, dass mehrere Datenblöcke gleichzeitig berechnet werden, um die Geschwindigkeit bei großen Eingaben zu erhöhen.
 
 4. **Adaptive Konstanten und dynamische Rundenanzahl**  
-   Der DaHo-Algorithmus verwendet adaptive Konstanten und passt die Rundenanzahl an die Eingabelänge an. Längere Eingaben erfordern mehr Runden, wodurch die Sicherheit erhöht wird.
+   Der Davo-Algorithmus verwendet adaptive Konstanten und passt die Rundenanzahl an die Eingabelänge an. Längere Eingaben erfordern mehr Runden, wodurch die Sicherheit erhöht wird.
 
 5. **Zustandsvektor und Feedback-System**  
    Der Zustandsvektor speichert den aktuellen Hash-Zustand und wird bei jeder Runde aktualisiert. Das Feedback-System sorgt für eine kontinuierliche Rückkopplung, was bedeutet, dass jeder Block das Ergebnis des vorherigen Blocks beeinflusst.
