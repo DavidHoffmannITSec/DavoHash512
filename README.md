@@ -1,6 +1,6 @@
-# DaHo Hash-Algorithmus
+# DaHo512 Hash-Algorithmus
 
-DaHo ist ein individueller, robuster Hash-Algorithmus, der speziell für hohe Sicherheit und effiziente Berechnung entwickelt wurde. Dieser Algorithmus wandelt eine beliebige Eingabe (z. B. Text, Zahlen, Sonderzeichen) in einen einzigartigen, festen 512-Bit-Hash-Wert um und hängt den Tag `DaHo` an den Hash an, um den Hash als "DaHo-Hash" zu kennzeichnen.
+DaHo512 ist ein individueller, robuster Hash-Algorithmus, der speziell für hohe Sicherheit und effiziente Berechnung entwickelt wurde. Dieser Algorithmus wandelt eine beliebige Eingabe (z. B. Text, Zahlen, Sonderzeichen) in einen einzigartigen, festen 512-Bit-Hash-Wert um und hängt den Tag `DaHo` an den Hash an, um den Hash als "DaHo-Hash" zu kennzeichnen.
 
 ## Funktionsweise
 
@@ -36,6 +36,4 @@ String hashValue = DaHoEncryption.hash("Hallo");
 System.out.println("Hash-Wert: " + hashValue);
 ```
 
-Das ist der Output: "6c78db2014e7da662e2cba57d32ac779ec6b58e29918d0d170e4e5fc49c7759d513abca7d1079addda43fae7e749bf92b1d6ca1d6915999d2885d26348196fbDaHo"
-
-Der DaHo-Hash wird gekennzeichnet durch das "DaHo" am ende des Hashes.
+Das ist der Output: "6c78db2014e7da662e2cba57d32ac779ec6b58e29918d0d170e4e5fc49c7759d513abca7d1079addda43fae7e749bf92b1d6ca1d6915999d2885d26348196fb"
