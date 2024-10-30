@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.util.Arrays;
 
-public class DaHoHash
+public class DavoHash
 {
 
     // Abgestimmte Anfangswerte für maximale Diffusion

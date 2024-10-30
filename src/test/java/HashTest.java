@@ -1,5 +1,5 @@
 
-import org.example.DaHoHash;
+import org.example.DavoHash;
 
 import org.junit.Test;
 import java.util.HashSet;
@@ -22,13 +22,13 @@ public class HashTest {
     @Test
     public void testPartialMatchAvoidance() {
         String input = "partialMatchTest";
-        String targetHash = DaHoHash.hash(input);
+        String targetHash = DavoHash.hash(input);
         String partialTarget = targetHash.substring(0, PARTIAL_MATCH_LENGTH);
 
         boolean foundPartialMatch = false;
         for (int i = 0; i < 2_000_000; i++) {
             String randomInput = "test" + Math.random();
-            String hash = DaHoHash.hash(randomInput);
+            String hash = DavoHash.hash(randomInput);
 
             if (hash.startsWith(partialTarget)) {
                 foundPartialMatch = true;
@@ -49,7 +49,7 @@ public class HashTest {
                 final int index = i;
                 executor.submit(() -> {
                     String randomInput = "complexInput" + index + Math.random();
-                    String hash = DaHoHash.hash(randomInput);
+                    String hash = DavoHash.hash(randomInput);
                     synchronized (hashSet) {
                         assertTrue(hashSet.add(hash), "Kollision erkannt: Zwei verschiedene Eingaben führten zum gleichen Hash.");
                     }
@@ -72,7 +72,7 @@ public class HashTest {
         String largeInput = "x".repeat(maxInputSize);
 
         long startTime = System.nanoTime();
-        String hash = DaHoHash.hash(largeInput);
+        String hash = DavoHash.hash(largeInput);
         long duration = System.nanoTime() - startTime;
 
         assertNotNull(hash, "Hash sollte für extrem große Eingaben nicht null sein.");
@@ -84,10 +84,10 @@ public class HashTest {
     @Test
     public void testExtremeAvalancheEffect() {
         String input = "ExtremeAvalancheInput";
-        String hash1 = DaHoHash.hash(input);
+        String hash1 = DavoHash.hash(input);
         Random random = new Random();
 
-        for (int bitFlips = 1; bitFlips <= MAX_BIT_FLIP_COUNT * 5; bitFlips++) { // Fünffache Bit-Änderungen
+        for (int bitFlips = 1; bitFlips <= MAX_BIT_FLIP_COUNT * 5; bitFlips++) {
             char[] chars = input.toCharArray();
 
             for (int i = 0; i < bitFlips; i++) {
@@ -96,10 +96,10 @@ public class HashTest {
             }
 
             String modifiedInput = new String(chars);
-            String hash2 = DaHoHash.hash(modifiedInput);
+            String hash2 = DavoHash.hash(modifiedInput);
 
             int difference = calculateBitDifference(hash1, hash2);
-            assertTrue(difference > (hash1.length() * 4 * 0.58), "Extremer Avalanche-Effekt-Test fehlgeschlagen.");
+            assertTrue(difference > (hash1.length() * 4 * 0.60), "Extremer Avalanche-Effekt-Test fehlgeschlagen.");
         }
     }
 
@@ -110,7 +110,7 @@ public class HashTest {
 
         for (int i = 0; i < BIRTHDAY_ATTACK_SAMPLE_SIZE * 2; i++) {
             String randomInput = "birthdayAttack" + i + Math.random();
-            String hash = DaHoHash.hash(randomInput);
+            String hash = DavoHash.hash(randomInput);
             assertTrue(hashSet.add(hash), "Kollision erkannt: Zwei zufällige Eingaben erzeugten denselben Hash.");
         }
     }
@@ -124,7 +124,7 @@ public class HashTest {
         };
 
         for (String input : specialInputs) {
-            String hash = DaHoHash.hash(input);
+            String hash = DavoHash.hash(input);
             assertNotNull(hash, "Hash sollte für Multibyte-Eingaben nicht null sein.");
             assertFalse(hash.isEmpty(), "Hash sollte nicht leer sein.");
         }
@@ -135,7 +135,7 @@ public class HashTest {
     public void testRapidSequentialHashing() {
         for (int i = 0; i < 100_000; i++) {
             String input = "rapidTestInput" + i;
-            String hash = DaHoHash.hash(input);
+            String hash = DavoHash.hash(input);
 
             assertNotNull(hash, "Hash sollte nicht null sein bei sequentieller Eingabe.");
             assertFalse(hash.isEmpty(), "Hash sollte nicht leer sein.");
@@ -150,7 +150,7 @@ public class HashTest {
 
         for (int i = 0; i < baseInput.length() - 5; i++) {
             String window = baseInput.substring(i, i + 6);
-            String hash = DaHoHash.hash(window);
+            String hash = DavoHash.hash(window);
 
             assertTrue(hashes.add(hash), "Sliding Windows Test fehlgeschlagen: Zwei unterschiedliche Fenster erzeugten denselben Hash.");
         }
@@ -160,12 +160,12 @@ public class HashTest {
     @Test
     public void testStackedLengthExtensionResistance() {
         String input = "secureBaseData";
-        String hash1 = DaHoHash.hash(input);
+        String hash1 = DavoHash.hash(input);
 
         String extendedInput = input;
         for (int i = 0; i < 10; i++) {
             extendedInput += "extension" + i;
-            String hash2 = DaHoHash.hash(extendedInput);
+            String hash2 = DavoHash.hash(extendedInput);
 
             assertNotEquals(hash1, hash2, "Längenverlängerungsangriff erfolgreich.");
         }
@@ -186,7 +186,7 @@ public class HashTest {
             String mirroredPattern = new StringBuilder(repeatedPattern).reverse().toString();
             String randomInput = repeatedPattern + mirroredPattern;
 
-            String hash = DaHoHash.hash(randomInput);
+            String hash = DavoHash.hash(randomInput);
             assertTrue(hashSet.add(hash), "Kollision erkannt: Zwei zufällige Muster führten zum gleichen Hash.");
         }
     }
