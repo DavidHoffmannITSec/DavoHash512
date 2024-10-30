@@ -3,11 +3,9 @@ package org.example;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.util.Arrays;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.RecursiveTask;
-import java.util.stream.IntStream;
 
-public class DaHoEncryption {
+public class DaHoHash
+{
 
     // Abgestimmte Anfangswerte für maximale Diffusion
     private static final long[] INITIAL_VALUES = {
