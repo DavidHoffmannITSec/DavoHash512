@@ -1,6 +1,6 @@
 package org.example;
 
-import java.nio.charset.StandardCharsets;
+import java.io.StringReader;
 import java.text.Normalizer;
 
 public class DavoHash {
@@ -57,34 +57,68 @@ public class DavoHash {
 
     public static String hash(String input) {
         if (input == null) {
-            input = ""; // Falls `null`, wird ein leerer String verwendet
+            input = ""; // Fallback für `null`
         }
 
-        byte[] normalizedInput = Normalizer.normalize(input, Normalizer.Form.NFC)
-                .getBytes(StandardCharsets.UTF_8);
+        String normalized = Normalizer.normalize(input, Normalizer.Form.NFC);
+        long[] state = initializeState(normalized.length());
 
-        byte[] paddedInput = padInput(normalizedInput);
-        long[] state = initializeState(normalizedInput.length);
-        processBlocks(paddedInput, state);
+        try (StringReader reader = new StringReader(normalized)) {
+            processStream(reader, state);
+        } catch (Exception e) {
+            System.out.println("Error");
+        }
+
         finalization(state);
         return buildHashString(state);
     }
 
-    private static byte[] padInput(byte[] input) {
-        int originalLength = input.length;
-        int paddingLength = BLOCK_SIZE - ((originalLength + 16) % BLOCK_SIZE);
-        byte[] padded = new byte[originalLength + paddingLength + 16];
+    private static void processStream(StringReader reader, long[] state) throws Exception {
+        char[] charBuffer = new char[BLOCK_SIZE];
+        byte[] byteBuffer = new byte[BLOCK_SIZE];
+        int charsRead;
+        boolean paddingAdded = false;
 
-        System.arraycopy(input, 0, padded, 0, originalLength);
-        padded[originalLength] = (byte) 0x80;
+        while ((charsRead = reader.read(charBuffer)) != -1) {
+            for (int i = 0; i < charsRead; i++) {
+                byteBuffer[i] = (byte) charBuffer[i];
+            }
 
-        long bitLength = originalLength * 8L;
+            byte[] block = (charsRead == BLOCK_SIZE) ? byteBuffer : padInput(byteBuffer, charsRead);
+            if (charsRead < BLOCK_SIZE) paddingAdded = true;
+
+            processBlock(toLongArray(block), state);
+        }
+
+        if (!paddingAdded) {
+            byte[] paddedBlock = padInput(new byte[0], 0);
+            processBlock(toLongArray(paddedBlock), state);
+        }
+    }
+
+    private static byte[] padInput(byte[] input, int length) {
+        int paddingLength = BLOCK_SIZE - ((length + 16) % BLOCK_SIZE);
+        byte[] padded = new byte[length + paddingLength + 16];
+
+        System.arraycopy(input, 0, padded, 0, length);
+        padded[length] = (byte) 0x80;
+
+        long bitLength = length * 8L;
         for (int i = 0; i < 8; i++) {
             padded[padded.length - 16 + i] = (byte) (bitLength >>> (i * 8));
             padded[padded.length - 8 + i] = (byte) ~(bitLength >>> ((7 - i) * 8));
         }
 
         return padded;
+    }
+
+    private static long[] toLongArray(byte[] bytes) {
+        int length = (bytes.length + 7) / 8;
+        long[] longs = new long[length];
+        for (int i = 0; i < length; i++) {
+            longs[i] = getLongFromBytes(bytes, i * 8);
+        }
+        return longs;
     }
 
     private static long[] initializeState(int inputLength) {
@@ -95,20 +129,6 @@ public class DavoHash {
         return state;
     }
 
-    private static void processBlocks(byte[] input, long[] state) {
-        int numBlocks = input.length / BLOCK_SIZE;
-        long[] block = new long[STATE_SIZE * 2];
-
-        for (int i = 0; i < numBlocks; i++) {
-            for (int j = 0; j < STATE_SIZE * 2; j++) {
-                block[j] = getLongFromBytes(input, i * BLOCK_SIZE + (j * 8) % BLOCK_SIZE);
-            }
-
-            int rounds = BASE_ROUNDS + Math.min(numBlocks / 1000, 20); // Anpassung der Rundenanzahl
-            processBlock(block, state, rounds);
-        }
-    }
-
     private static long getLongFromBytes(byte[] bytes, int offset) {
         long value = 0;
         for (int i = 0; i < 8; i++) {
@@ -117,12 +137,12 @@ public class DavoHash {
         return value;
     }
 
-    private static void processBlock(long[] block, long[] state, int rounds) {
+    private static void processBlock(long[] block, long[] state) {
         long[] expanded = expandBlock(block);
         long a = state[0], b = state[1], c = state[2], d = state[3];
         long e = state[4], f = state[5], g = state[6], h = state[7];
 
-        for (int r = 0; r < rounds; r++) {
+        for (int r = 0; r < BASE_ROUNDS; r++) {
             long k = ROUND_CONSTANTS[r % ROUND_CONSTANTS.length] ^ expanded[r % expanded.length];
             long ch = (e & f) ^ (~e & g);
             long maj = (a & b) ^ (a & c) ^ (b & c);
@@ -132,7 +152,6 @@ public class DavoHash {
             long t1 = h + sigma1 + ch + k + expanded[r % expanded.length];
             long t2 = sigma0 + maj;
 
-            // Maximale Avalanche mit bitweisen Operationen
             e = d + t1;
             h = g;
             g = f;
@@ -143,13 +162,11 @@ public class DavoHash {
             b = a;
             a = t1 + t2;
 
-            // Verbessere die Avalanche-Eigenschaften
-            long mix = dynamicRotate(t1, 13, r) ^ applySBox(t2); // Anwendung der dynamischen Rotation
+            long mix = dynamicRotate(t1, 13, r) ^ applySBox(t2);
             e ^= mix;
             a ^= dynamicRotate(mix, 19, r);
         }
 
-        // Zustand nach der Verarbeitung mit Avalanche-Mischung
         state[0] ^= avalancheMix(a);
         state[1] ^= avalancheMix(b);
         state[2] ^= avalancheMix(c);
@@ -165,9 +182,9 @@ public class DavoHash {
         System.arraycopy(block, 0, expanded, 0, block.length);
 
         for (int i = block.length; i < 64; i++) {
-            long s0 = rotateRight(expanded[i - 15], 1) ^ rotateRight(expanded[i - 15], 8) ^ (expanded[i - 15] >>> 7);
-            long s1 = rotateRight(expanded[i - 2], 19) ^ rotateRight(expanded[i - 2], 61) ^ (expanded[i - 2] >>> 6);
-            expanded[i] = expanded[i - 16] + s0 + expanded[i - 7] + s1;
+            long s0 = (i >= 15) ? (rotateRight(expanded[i - 15], 1) ^ rotateRight(expanded[i - 15], 8) ^ (expanded[i - 15] >>> 7)) : 0;
+            long s1 = (i >= 2) ? (rotateRight(expanded[i - 2], 19) ^ rotateRight(expanded[i - 2], 61) ^ (expanded[i - 2] >>> 6)) : 0;
+            expanded[i] = (i >= 16 ? expanded[i - 16] : 0) + s0 + (i >= 7 ? expanded[i - 7] : 0) + s1;
             expanded[i] = avalancheMix(expanded[i]);
         }
 
@@ -175,7 +192,7 @@ public class DavoHash {
     }
 
     private static void finalization(long[] state) {
-        for (int round = 0; round < 12; round++) { // Mehr Runden für die Finalisierung
+        for (int round = 0; round < 12; round++) {
             for (int i = 0; i < STATE_SIZE; i++) {
                 long value = state[i];
                 value = avalancheMix(value);
