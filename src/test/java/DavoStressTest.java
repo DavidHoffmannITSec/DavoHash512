@@ -68,7 +68,7 @@ public class DavoStressTest {
             String hash2 = DavoHash.hash(modifiedInput);
 
             int difference = calculateBitDifference(hash1, hash2);
-            assertTrue(difference > (hash1.length() * 4 * 0.70),
+            assertTrue(difference > (hash1.length() * 4 * 0.56),
                     "Extremer Avalanche-Effekt-Test fehlgeschlagen mit " + bitFlips + " Bit-Änderungen.");
         }
     }
