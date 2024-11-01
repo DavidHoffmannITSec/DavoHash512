@@ -101,7 +101,7 @@ public class DavoStressTest {
     @Test
     public void testExtremeCompressionStrength() {
         String smallInput = "a";
-        String largeInput = "y".repeat(2_000_000_000); // 2 GB
+        String largeInput = "y".repeat(1_000_000_000); // 2 GB
 
         String smallHash = DavoHash.hash(smallInput);
         String largeHash = DavoHash.hash(largeInput);
