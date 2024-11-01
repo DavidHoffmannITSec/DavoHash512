@@ -56,8 +56,13 @@ public class DavoHash {
 
 
     public static String hash(String input) {
+        if (input == null) {
+            input = ""; // Falls `null`, wird ein leerer String verwendet
+        }
+
         byte[] normalizedInput = Normalizer.normalize(input, Normalizer.Form.NFC)
                 .getBytes(StandardCharsets.UTF_8);
+
         byte[] paddedInput = padInput(normalizedInput);
         long[] state = initializeState(normalizedInput.length);
         processBlocks(paddedInput, state);
