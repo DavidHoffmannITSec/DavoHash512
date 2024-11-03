@@ -54,6 +54,7 @@ public class DavoHash {
             0x142929670A0E6E70L, 0x27B70A8546D22FFCL, 0x2E1B21385C26C926L, 0x4D2C6DFC5AC42AEDL
     };
 
+    private static final int TIMING_PROTECTION_THRESHOLD = 50 * 1024 * 1024; // 50 MB in Bytes
 
     public static String hash(String input) {
         if (input == null) {
@@ -64,7 +65,7 @@ public class DavoHash {
         long[] state = initializeState(normalized.length());
 
         try (StringReader reader = new StringReader(normalized)) {
-            processStream(reader, state);
+            processStream(reader, state, normalized.length());
         } catch (Exception e) {
             System.out.println("Error");
         }
@@ -73,7 +74,7 @@ public class DavoHash {
         return buildHashString(state);
     }
 
-    private static void processStream(StringReader reader, long[] state) throws Exception {
+    private static void processStream(StringReader reader, long[] state, int inputLength) throws Exception {
         char[] charBuffer = new char[BLOCK_SIZE];
         byte[] byteBuffer = new byte[BLOCK_SIZE];
         int charsRead;
@@ -87,12 +88,12 @@ public class DavoHash {
             byte[] block = (charsRead == BLOCK_SIZE) ? byteBuffer : padInput(byteBuffer, charsRead);
             if (charsRead < BLOCK_SIZE) paddingAdded = true;
 
-            processBlock(toLongArray(block), state);
+            processBlock(toLongArray(block), state, inputLength);
         }
 
         if (!paddingAdded) {
             byte[] paddedBlock = padInput(new byte[0], 0);
-            processBlock(toLongArray(paddedBlock), state);
+            processBlock(toLongArray(paddedBlock), state, inputLength);
         }
     }
 
@@ -137,7 +138,8 @@ public class DavoHash {
         return value;
     }
 
-    private static void processBlock(long[] block, long[] state) {
+    private static void processBlock(long[] block, long[] state, int inputLength) {
+        long start = System.nanoTime();
         long[] expanded = expandBlock(block);
         long a = state[0], b = state[1], c = state[2], d = state[3];
         long e = state[4], f = state[5], g = state[6], h = state[7];
@@ -167,6 +169,25 @@ public class DavoHash {
             a ^= dynamicRotate(mix, 19, r);
         }
 
+        // Dummy-Operationen und konstante Laufzeitregelung für kleine/mittlere Eingaben (< 50 MB)
+        if (inputLength <= TIMING_PROTECTION_THRESHOLD) {
+            for (int i = 0; i < 500; i++) {
+                long dummy = ROUND_CONSTANTS[i % ROUND_CONSTANTS.length];
+                dummy ^= applySBox(state[i % STATE_SIZE]);
+                dummy += dynamicRotate(dummy, i % 29, i);
+                dummy ^= System.nanoTime() % 31;
+                state[i % STATE_SIZE] ^= dummy;
+            }
+
+            // Sicherstellen der konstanten Laufzeit für Eingaben unterhalb des Schwellenwertes
+            long targetTime = 1000000L; // 1 Millisekunde als Zielzeit in Nanosekunden
+            long duration = System.nanoTime() - start;
+            while (duration < targetTime) {
+                duration = System.nanoTime() - start;
+            }
+        }
+
+        // Finalisierung des Zustands für alle Eingaben
         state[0] ^= avalancheMix(a);
         state[1] ^= avalancheMix(b);
         state[2] ^= avalancheMix(c);
@@ -176,6 +197,8 @@ public class DavoHash {
         state[6] ^= avalancheMix(g);
         state[7] ^= avalancheMix(h);
     }
+
+
 
     private static long[] expandBlock(long[] block) {
         long[] expanded = new long[64];

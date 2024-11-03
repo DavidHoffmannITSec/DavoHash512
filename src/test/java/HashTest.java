@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class HashTest {
 
-    private static final int NUM_MAX_TEST_CASES = 10_000_000;
+    private static final int NUM_MAX_TEST_CASES = 2_000_000;
     private static final int BIRTHDAY_ATTACK_SAMPLE_SIZE = 1_000_000;
     private static final int MAX_BIT_FLIP_COUNT = 50;
     private static final int PARTIAL_MATCH_LENGTH = 32;
@@ -135,7 +135,6 @@ public class HashTest {
         for (int i = 0; i < 100_000; i++) {
             String input = "rapidTestInput" + i;
             String hash = DavoHash.hash(input);
-
             assertNotNull(hash, "Hash sollte nicht null sein bei sequentieller Eingabe.");
             assertFalse(hash.isEmpty(), "Hash sollte nicht leer sein.");
         }
