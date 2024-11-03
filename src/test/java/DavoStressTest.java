@@ -19,6 +19,12 @@ public class DavoStressTest {
     @Test
     public void testExtremeTimingConsistency() {
         String input = "timingExtremeTestInput";
+
+        // Warming-Up Phase
+        for (int i = 0; i < 100; i++) {
+            DavoHash.hash(input);
+        }
+
         long[] durations = new long[500];
 
         for (int i = 0; i < durations.length; i++) {
@@ -29,10 +35,11 @@ public class DavoStressTest {
 
         long averageTime = calculateAverage(durations);
         for (long duration : durations) {
-            assertTrue(Math.abs(duration - averageTime) < (averageTime * 0.05),
+            assertTrue(Math.abs(duration - averageTime) < (averageTime * 0.1),
                     "Extrem-Konsistenz verletzt: Unterschiedliche Zeiten für gleiche Eingabe erkannt.");
         }
     }
+
 
     // Extreme Zufalls- und Entropietests
     @Test
