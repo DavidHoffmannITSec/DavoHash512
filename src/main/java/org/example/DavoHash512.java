@@ -3,7 +3,8 @@ package org.example;
 import java.io.StringReader;
 import java.text.Normalizer;
 
-public class DavoHash {
+public class DavoHash512
+{
     private static final int STATE_SIZE = 8;
     private static final int BLOCK_SIZE = 64;
     private static final int WORD_SIZE = 64;
