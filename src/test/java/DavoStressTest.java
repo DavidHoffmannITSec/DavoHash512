@@ -1,4 +1,4 @@
-import org.example.DavoHash;
+import org.example.DavoHash512;
 import org.junit.Test;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -22,14 +22,14 @@ public class DavoStressTest {
 
         // Warming-Up Phase
         for (int i = 0; i < 100; i++) {
-            DavoHash.hash(input);
+            DavoHash512.hash(input);
         }
 
         long[] durations = new long[500];
 
         for (int i = 0; i < durations.length; i++) {
             long startTime = System.nanoTime();
-            DavoHash.hash(input);
+            DavoHash512.hash(input);
             durations[i] = System.nanoTime() - startTime;
         }
 
@@ -50,7 +50,7 @@ public class DavoStressTest {
         for (int i = 0; i < EXTREME_ENTROPY_SAMPLE_SIZE; i++) {
             byte[] randomBytes = new byte[64];  // größere Eingaben für Entropietests
             random.nextBytes(randomBytes);
-            String hash = DavoHash.hash(new String(randomBytes, StandardCharsets.UTF_8));
+            String hash = DavoHash512.hash(new String(randomBytes, StandardCharsets.UTF_8));
 
             assertTrue(hashSet.add(hash), "Kollision bei extremem Entropietest gefunden.");
         }
@@ -60,7 +60,7 @@ public class DavoStressTest {
     @Test
     public void testExtremeBitFlipsCollisionResistance() {
         String input = "extremeCollisionTestInput";
-        String hash1 = DavoHash.hash(input);
+        String hash1 = DavoHash512.hash(input);
 
         for (int bitFlips = 1; bitFlips <= MAX_BIT_FLIP_COUNT; bitFlips++) {
             char[] chars = input.toCharArray();
@@ -72,7 +72,7 @@ public class DavoStressTest {
             }
 
             String modifiedInput = new String(chars);
-            String hash2 = DavoHash.hash(modifiedInput);
+            String hash2 = DavoHash512.hash(modifiedInput);
 
             int difference = calculateBitDifference(hash1, hash2);
             assertTrue(difference > (hash1.length() * 4 * 0.56),
@@ -90,7 +90,7 @@ public class DavoStressTest {
                 final int index = i;
                 executor.submit(() -> {
                     String input = "extremeThreadingTest" + index;
-                    String hash = DavoHash.hash(input);
+                    String hash = DavoHash512.hash(input);
                     assertNotNull(hash, "Hash sollte nicht null sein.");
                 });
             }
@@ -110,8 +110,8 @@ public class DavoStressTest {
         String smallInput = "a";
         String largeInput = "y".repeat(1_000_000_000); // 2 GB
 
-        String smallHash = DavoHash.hash(smallInput);
-        String largeHash = DavoHash.hash(largeInput);
+        String smallHash = DavoHash512.hash(smallInput);
+        String largeHash = DavoHash512.hash(largeInput);
 
         assertNotNull(smallHash, "Hash für extrem kleine Eingabe sollte nicht null sein.");
         assertNotNull(largeHash, "Hash für extrem große Eingabe sollte nicht null sein.");
@@ -124,8 +124,8 @@ public class DavoStressTest {
         String input1 = "initializationExtremeTest";
         String input2 = "InitializationExtremeTest";
 
-        String hash1 = DavoHash.hash(input1);
-        String hash2 = DavoHash.hash(input2);
+        String hash1 = DavoHash512.hash(input1);
+        String hash2 = DavoHash512.hash(input2);
 
         assertNotEquals(hash1, hash2, "Verschiedene Eingaben sollten unterschiedliche Hashes ergeben.");
     }
@@ -136,7 +136,7 @@ public class DavoStressTest {
         long memoryBefore = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 
         for (int i = 0; i < 10_000_000; i++) {
-            String hash = DavoHash.hash("gcExtremeTest" + i);
+            String hash = DavoHash512.hash("gcExtremeTest" + i);
             assertNotNull(hash, "Hash sollte nicht null sein.");
         }
 
@@ -155,7 +155,7 @@ public class DavoStressTest {
 
         for (String input : faultyInputs) {
             try {
-                String hash = DavoHash.hash(input);
+                String hash = DavoHash512.hash(input);
                 assertNotNull(hash, "Hash sollte für extrem fehlerhafte Eingaben nicht null sein.");
             } catch (Exception e) {
                 fail("Hashing von extrem fehlerhaften Eingaben sollte keine Ausnahme auslösen.");
