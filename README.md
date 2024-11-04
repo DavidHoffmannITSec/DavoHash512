@@ -9,7 +9,7 @@ Der Davo-Algorithmus verarbeitet die Eingabe in mehreren Schritten:
    Die Eingabe wird standardisiert, um sicherzustellen, dass verschiedene Darstellungen desselben Inhalts gleich behandelt werden.
 
 2. **Padding (Auffüllung)**  
-   Der Algorithmus fügt der Eingabe spezielle Füllwerte hinzu, um sicherzustellen, dass die Eingabe immer in gleich großen Datenblöcken (128 Byte) verarbeitet wird.
+   Der Algorithmus fügt der Eingabe spezielle Füllwerte hinzu, um sicherzustellen, dass die Eingabe immer in gleich großen Datenblöcken (64 Byte) verarbeitet wird.
 
 3. **Blockverarbeitung und parallele Berechnung**  
    Bei größeren Eingaben wird die Verarbeitung parallelisiert. Das bedeutet, dass mehrere Datenblöcke gleichzeitig berechnet werden, um die Geschwindigkeit bei großen Eingaben zu erhöhen.
