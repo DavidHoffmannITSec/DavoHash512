@@ -79,8 +79,9 @@ public class HashTest {
         System.out.println("Hashing-Zeit für 1 GB große Eingabe: " + duration / 1_000_000_000.0 + " Sekunden");
     }
 
+    // Beispiel für eine Testmethode mit Prüfung von awaitTermination
     @Test
-    public void testExtremeAvalancheEffect() {
+    public void testExtremeAvalancheEffect() throws InterruptedException {
         String input = "ExtremeAvalancheInput";
         String hash1 = DavoHash512.hash(input);
         Random random = new Random();
@@ -98,18 +99,18 @@ public class HashTest {
                     String modifiedInput = new String(chars);
                     String hash2 = DavoHash512.hash(modifiedInput);
                     int difference = calculateBitDifference(hash1, hash2);
-                    assertTrue(difference > (hash1.length() * 4 * 0.57), "Extremer Avalanche-Effekt-Test fehlgeschlagen.");
+                    assertTrue(difference > (hash1.length() * 4 * 1.0), "Extremer Avalanche-Effekt-Test fehlgeschlagen.");
                 });
             }
         } finally {
             executor.shutdown();
-            try {
-                executor.awaitTermination(120, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+            boolean terminated = executor.awaitTermination(120, TimeUnit.SECONDS);
+            if (!terminated) {
+                System.err.println("Der ExecutorService wurde nicht rechtzeitig beendet.");
             }
         }
     }
+
 
 
     @Test

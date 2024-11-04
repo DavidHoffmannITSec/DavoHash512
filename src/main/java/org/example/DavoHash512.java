@@ -79,7 +79,7 @@ public class DavoHash512 {
             System.err.println("Error: " + e.getMessage());
         }
 
-        finalization(state);
+        doubleFinalization(state);
         return buildHashString(state);
     }
 
@@ -165,6 +165,8 @@ public class DavoHash512 {
             a = t1 + t2;
 
             if (r % 10 == 0) applyDynamicPBox(state, r);
+            // Dummy-Operationen für Timing-Konsistenz
+            a ^= (a + r) & 0xFF;
         }
 
         for (int i = 0; i < STATE_SIZE; i++) {
@@ -208,8 +210,8 @@ public class DavoHash512 {
         return value;
     }
 
-    private static void finalization(long[] state) {
-        for (int round = 0; round < 12; round++) {
+    private static void doubleFinalization(long[] state) {
+        for (int round = 0; round < 24; round++) {
             for (int i = 0; i < STATE_SIZE; i++) {
                 long value = state[i];
                 value = avalancheMix(value);
