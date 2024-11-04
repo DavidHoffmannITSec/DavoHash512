@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class HashTest {
 
     private static final int NUM_MAX_TEST_CASES = 10_000_000;
-    private static final int BIRTHDAY_ATTACK_SAMPLE_SIZE = 1_000_000;
+    private static final int BIRTHDAY_ATTACK_SAMPLE_SIZE = 2_000_000;
     private static final int MAX_BIT_FLIP_COUNT = 50;
     private static final int PARTIAL_MATCH_LENGTH = 32;
 
