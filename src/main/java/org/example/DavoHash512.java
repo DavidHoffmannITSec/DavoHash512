@@ -3,7 +3,7 @@ package org.example;
 import java.io.StringReader;
 import java.text.Normalizer;
 
-public class DavoHash {
+public class DavoHash512 {
     private static final int STATE_SIZE = 8;
     private static final int BLOCK_SIZE = 64;
     private static final int WORD_SIZE = 64;
@@ -54,6 +54,8 @@ public class DavoHash {
             0x142929670A0E6E70L, 0x27B70A8546D22FFCL, 0x2E1B21385C26C926L, 0x4D2C6DFC5AC42AEDL
     };
 
+    private static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
+
 
     public static String hash(String input) {
         if (input == null) {
@@ -63,13 +65,18 @@ public class DavoHash {
         String normalized = Normalizer.normalize(input, Normalizer.Form.NFC);
         long[] state = initializeState(normalized.length());
 
+        long startTime = System.nanoTime();
         try (StringReader reader = new StringReader(normalized)) {
             processStream(reader, state);
         } catch (Exception e) {
-            System.out.println("Error");
+            System.out.println("Error: " + e.getMessage());
         }
 
         finalization(state);
+        long duration = System.nanoTime() - startTime;
+
+        enforceConstantTime(duration);
+
         return buildHashString(state);
     }
 
@@ -77,24 +84,41 @@ public class DavoHash {
         char[] charBuffer = new char[BLOCK_SIZE];
         byte[] byteBuffer = new byte[BLOCK_SIZE];
         int charsRead;
-        boolean paddingAdded = false;
 
         while ((charsRead = reader.read(charBuffer)) != -1) {
-            for (int i = 0; i < charsRead; i++) {
-                byteBuffer[i] = (byte) charBuffer[i];
+            // Padding mit Nullen
+            for (int i = 0; i < BLOCK_SIZE; i++) {
+                byteBuffer[i] = (i < charsRead) ? (byte) charBuffer[i] : 0;
             }
 
-            byte[] block = (charsRead == BLOCK_SIZE) ? byteBuffer : padInput(byteBuffer, charsRead);
-            if (charsRead < BLOCK_SIZE) paddingAdded = true;
-
+            byte[] block = padInput(byteBuffer, charsRead);
             processBlock(toLongArray(block), state);
         }
 
-        if (!paddingAdded) {
-            byte[] paddedBlock = padInput(new byte[0], 0);
-            processBlock(toLongArray(paddedBlock), state);
-        }
+        // Padding für den letzten Block
+        byte[] paddedBlock = padInput(new byte[0], 0);
+        processBlock(toLongArray(paddedBlock), state);
     }
+
+    private static long[] toLongArray(byte[] bytes) {
+        int length = (bytes.length + 7) / 8; // Berechne die Anzahl der Longs, die benötigt werden
+        long[] longs = new long[length];
+        for (int i = 0; i < length; i++) {
+            longs[i] = getLongFromBytes(bytes, i * 8); // Wandelt jeden Block von Bytes in ein Long um
+        }
+        return longs;
+    }
+
+    private static long getLongFromBytes(byte[] bytes, int offset) {
+        long value = 0;
+        for (int i = 0; i < 8; i++) {
+            if (offset + i < bytes.length) { // Überprüfen, ob der Offset innerhalb der Grenzen liegt
+                value |= ((long) (bytes[offset + i] & 0xFF)) << ((7 - i) * 8);
+            }
+        }
+        return value;
+    }
+
 
     private static byte[] padInput(byte[] input, int length) {
         int paddingLength = BLOCK_SIZE - ((length + 16) % BLOCK_SIZE);
@@ -112,13 +136,16 @@ public class DavoHash {
         return padded;
     }
 
-    private static long[] toLongArray(byte[] bytes) {
-        int length = (bytes.length + 7) / 8;
-        long[] longs = new long[length];
-        for (int i = 0; i < length; i++) {
-            longs[i] = getLongFromBytes(bytes, i * 8);
+    private static void enforceConstantTime(long duration) {
+        long TIME_CONSTANT = 100_000_000; // 100ms
+        if (duration < TIME_CONSTANT) {
+            long waitTime = TIME_CONSTANT - duration;
+            try {
+                Thread.sleep(waitTime / 1_000_000, (int) (waitTime % 1_000_000));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
-        return longs;
     }
 
     private static long[] initializeState(int inputLength) {
@@ -129,25 +156,20 @@ public class DavoHash {
         return state;
     }
 
-    private static long getLongFromBytes(byte[] bytes, int offset) {
-        long value = 0;
-        for (int i = 0; i < 8; i++) {
-            value |= ((long) (bytes[offset + i] & 0xFF)) << ((7 - i) * 8);
-        }
-        return value;
-    }
-
     private static void processBlock(long[] block, long[] state) {
         long[] expanded = expandBlock(block);
         long a = state[0], b = state[1], c = state[2], d = state[3];
         long e = state[4], f = state[5], g = state[6], h = state[7];
 
-        for (int r = 0; r < BASE_ROUNDS; r++) {
+        // Dynamische Rundenzahl basierend auf der Eingabelänge
+        int rounds = (block.length < 64) ? 60 : BASE_ROUNDS;
+
+        for (int r = 0; r < rounds; r++) {
             long k = ROUND_CONSTANTS[r % ROUND_CONSTANTS.length] ^ expanded[r % expanded.length];
             long ch = (e & f) ^ (~e & g);
             long maj = (a & b) ^ (a & c) ^ (b & c);
-            long sigma0 = dynamicRotate(a, 28, r) ^ dynamicRotate(a, 34, r) ^ dynamicRotate(a, 39, r);
-            long sigma1 = dynamicRotate(e, 14, r) ^ dynamicRotate(e, 18, r) ^ dynamicRotate(e, 41, r);
+            long sigma0 = rotateRight(a, 28) ^ rotateRight(a, 34) ^ rotateRight(a, 39);
+            long sigma1 = rotateRight(e, 14) ^ rotateRight(e, 18) ^ rotateRight(e, 41);
 
             long t1 = h + sigma1 + ch + k + expanded[r % expanded.length];
             long t2 = sigma0 + maj;
@@ -162,9 +184,9 @@ public class DavoHash {
             b = a;
             a = t1 + t2;
 
-            long mix = dynamicRotate(t1, 13, r) ^ applySBox(t2);
-            e ^= mix;
-            a ^= dynamicRotate(mix, 19, r);
+            // Nur S-Box-Anwendung, keine Kombination mit Rotation
+            e ^= applySBox(t1);
+            a ^= rotateRight(t2, 19);
         }
 
         state[0] ^= avalancheMix(a);
@@ -177,6 +199,7 @@ public class DavoHash {
         state[7] ^= avalancheMix(h);
     }
 
+
     private static long[] expandBlock(long[] block) {
         long[] expanded = new long[64];
         System.arraycopy(block, 0, expanded, 0, block.length);
@@ -185,7 +208,6 @@ public class DavoHash {
             long s0 = (i >= 15) ? (rotateRight(expanded[i - 15], 1) ^ rotateRight(expanded[i - 15], 8) ^ (expanded[i - 15] >>> 7)) : 0;
             long s1 = (i >= 2) ? (rotateRight(expanded[i - 2], 19) ^ rotateRight(expanded[i - 2], 61) ^ (expanded[i - 2] >>> 6)) : 0;
             expanded[i] = (i >= 16 ? expanded[i - 16] : 0) + s0 + (i >= 7 ? expanded[i - 7] : 0) + s1;
-            expanded[i] = avalancheMix(expanded[i]);
         }
 
         return expanded;
@@ -212,16 +234,12 @@ public class DavoHash {
         return x;
     }
 
-    private static long dynamicRotate(long value, int bits, int round) {
-        return (round % 2 == 0) ? rotateRight(value, bits) : rotateLeft(value, bits);
+    private static long dynamicRotate(long value, int bits) {
+        return rotateRight(value, bits);
     }
 
     private static long rotateRight(long value, int bits) {
         return (value >>> bits) | (value << (WORD_SIZE - bits));
-    }
-
-    private static long rotateLeft(long value, int bits) {
-        return (value << bits) | (value >>> (WORD_SIZE - bits));
     }
 
     private static long applySBox(long value) {
@@ -255,10 +273,13 @@ public class DavoHash {
     }
 
     private static String buildHashString(long[] state) {
-        StringBuilder hashString = new StringBuilder(STATE_SIZE * 16);
-        for (long value : state) {
-            hashString.append(String.format("%016x", value));
+        char[] hashChars = new char[STATE_SIZE * 16];
+        for (int i = 0; i < state.length; i++) {
+            long value = state[i];
+            for (int j = 0; j < 16; j++) {
+                hashChars[i * 16 + j] = HEX_CHARS[(int) ((value >> (j * 4)) & 0xF)];
+            }
         }
-        return hashString.toString();
+        return new String(hashChars);
     }
 }
