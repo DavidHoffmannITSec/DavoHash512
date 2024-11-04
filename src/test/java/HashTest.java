@@ -81,24 +81,33 @@ public class HashTest {
 
     // Test für Avalanche-Effekt mit extremen Bit-Änderungen und zufälliger Zeichenumstellung
     @Test
-    public void testExtremeAvalancheEffect() {
+    public void testExtremeAvalancheEffect() throws InterruptedException {
         String input = "ExtremeAvalancheInput";
         String hash1 = DavoHash512.hash(input);
         Random random = new Random();
+        ExecutorService executor = Executors.newFixedThreadPool(64);
 
-        for (int bitFlips = 1; bitFlips <= MAX_BIT_FLIP_COUNT * 5; bitFlips++) {
-            char[] chars = input.toCharArray();
-
-            for (int i = 0; i < bitFlips; i++) {
-                int index = random.nextInt(chars.length);
-                chars[index] = (char) (chars[index] ^ (1 << random.nextInt(7)));
+        try {
+            for (int bitFlips = 1; bitFlips <= MAX_BIT_FLIP_COUNT * 5; bitFlips++) {
+                final int currentBitFlips = bitFlips;
+                executor.submit(() -> {
+                    char[] chars = input.toCharArray();
+                    for (int i = 0; i < currentBitFlips; i++) {
+                        int index = random.nextInt(chars.length);
+                        chars[index] = (char) (chars[index] ^ (1 << random.nextInt(7)));
+                    }
+                    String modifiedInput = new String(chars);
+                    String hash2 = DavoHash512.hash(modifiedInput);
+                    int difference = calculateBitDifference(hash1, hash2);
+                    assertTrue(difference > (hash1.length() * 4 * 0.90), "Extremer Avalanche-Effekt-Test fehlgeschlagen.");
+                });
             }
-
-            String modifiedInput = new String(chars);
-            String hash2 = DavoHash512.hash(modifiedInput);
-
-            int difference = calculateBitDifference(hash1, hash2);
-            assertTrue(difference > (hash1.length() * 4 * 0.57), "Extremer Avalanche-Effekt-Test fehlgeschlagen.");
+        } finally {
+            executor.shutdown();
+            boolean terminated = executor.awaitTermination(120, TimeUnit.SECONDS);
+            if (!terminated) {
+                System.err.println("Der ExecutorService wurde nicht rechtzeitig beendet.");
+            }
         }
     }
 

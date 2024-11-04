@@ -2,11 +2,12 @@ import org.example.DavoHash512;
 import org.junit.Test;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class DavoStressTest {
@@ -51,26 +52,49 @@ public class DavoStressTest {
 
     // Extreme Bit-Änderungstests mit komplexen Mustern
     @Test
-    public void testExtremeBitFlipsCollisionResistance() {
+    public void testExtremeBitFlipsCollisionResistance() throws InterruptedException, ExecutionException {
         String input = "extremeCollisionTestInput";
         String hash1 = DavoHash512.hash(input);
+        ExecutorService executor = Executors.newFixedThreadPool(32);
 
-        for (int bitFlips = 1; bitFlips <= MAX_BIT_FLIP_COUNT; bitFlips++) {
-            char[] chars = input.toCharArray();
-            SecureRandom random = new SecureRandom();
+        try {
+            List<Callable<Boolean>> tasks = createBitFlipTasks(input, hash1, MAX_BIT_FLIP_COUNT);
 
-            for (int i = 0; i < bitFlips; i++) {
-                int index = random.nextInt(chars.length);
-                chars[index] = (char) (chars[index] ^ (1 << random.nextInt(8)));
+            // Execute tasks and validate results
+            List<Future<Boolean>> results = executor.invokeAll(tasks);
+            for (Future<Boolean> result : results) {
+                assertTrue(result.get(), "Extreme Avalanche Effect Test failed.");
             }
-
-            String modifiedInput = new String(chars);
-            String hash2 = DavoHash512.hash(modifiedInput);
-
-            int difference = calculateBitDifference(hash1, hash2);
-            assertTrue(difference > (hash1.length() * 4 * 0.56),
-                    "Extremer Avalanche-Effekt-Test fehlgeschlagen mit " + bitFlips + " Bit-Änderungen.");
+        } finally {
+            executor.shutdown();
+            boolean terminated = executor.awaitTermination(120, TimeUnit.SECONDS);
+            if (!terminated) {
+                System.err.println("ExecutorService did not terminate in time.");
+            }
         }
+    }
+
+    private List<Callable<Boolean>> createBitFlipTasks(String input, String hash1, int maxBitFlipCount) {
+        List<Callable<Boolean>> tasks = new ArrayList<>();
+        for (int bitFlips = 1; bitFlips <= maxBitFlipCount; bitFlips++) {
+            final int currentBitFlips = bitFlips;
+            tasks.add(() -> {
+                char[] chars = input.toCharArray();
+                SecureRandom random = new SecureRandom();
+
+                for (int i = 0; i < currentBitFlips; i++) {
+                    int index = random.nextInt(chars.length);
+                    chars[index] = (char) (chars[index] ^ (1 << random.nextInt(8)));
+                }
+
+                String modifiedInput = new String(chars);
+                String hash2 = DavoHash512.hash(modifiedInput);
+
+                int difference = calculateBitDifference(hash1, hash2);
+                return difference > (hash1.length() * 4 * 0.57);
+            });
+        }
+        return tasks;
     }
 
     // Extrem-Belastungstests für Multi-Threading
