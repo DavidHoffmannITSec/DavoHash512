@@ -53,8 +53,9 @@ Durch die Kombination von S-Box, P-Box, Permutationen und speziellen Konstanten 
 Der folgende Aufruf erzeugt einen Hash für die Eingabe "Hallo":
 
 ```java
-String hashValue = DavoHash.hash("Hallo");
-System.out.println("Hash-Wert: " + hashValue);
+String input = "Hallo";
+byte[] hash = DavoHash512.hash(input);
+System.out.println("Hash: " + DavoHash512.bytesToHex(hash));
 ```
 
-Das ist der Output: "6c78db2014e7da662e2cba57d32ac779ec6b58e29918d0d170e4e5fc49c7759d513abca7d1079addda43fae7e749bf92b1d6ca1d6915999d2885d26348196fb"
+Das ist z.B. der Output: "8e5e51e30840f6b26340322dd889738c756685bfde94ae467fc4eb48c70c03b1fbf0770fef4f653de821f69a96eca9bd9b60a4ab2c18d66fdc175d5a75a94b45"
