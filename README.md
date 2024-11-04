@@ -47,6 +47,15 @@ Im `DavoHash512`-Algorithmus werden sowohl eine S-Box (Substitutionsbox) als auc
 
 Durch die Kombination von S-Box, P-Box, Permutationen und speziellen Konstanten wird sichergestellt, dass jede kleine Veränderung in der Eingabe zu einem stark veränderten Hash führt, was eine wichtige Eigenschaft in der Kryptographie darstellt.
 
+### Funktionen
+
+`DavoHash512` bietet mehrere nützliche Funktionen zur Hash-Berechnung und -Konvertierung:
+
+- **`hash(String input)`**: Berechnet den 512-Bit-Hashwert für die gegebene Eingabe (String). Gibt ein Byte-Array zurück, das den Hashwert repräsentiert.
+
+- **`bytesToHex(byte[] hashBytes)`**: Konvertiert das Byte-Array des Hashwerts in einen hexadezimalen String für eine bessere Lesbarkeit.
+
+- **`hexToBytes(String hex)`**: Konvertiert einen hexadezimalen String zurück in ein Byte-Array. Dies ermöglicht es, Hashwerte in einem kompakten Format zu speichern und bei Bedarf wiederherzustellen.
 
 ## Beispiel
 
@@ -56,6 +65,3 @@ Der folgende Aufruf erzeugt einen Hash für die Eingabe "Hallo":
 String input = "Hallo";
 byte[] hash = DavoHash512.hash(input);
 System.out.println("Hash: " + DavoHash512.bytesToHex(hash));
-```
-
-Das ist z.B. der Output: "8e5e51e30840f6b26340322dd889738c756685bfde94ae467fc4eb48c70c03b1fbf0770fef4f653de821f69a96eca9bd9b60a4ab2c18d66fdc175d5a75a94b45"
