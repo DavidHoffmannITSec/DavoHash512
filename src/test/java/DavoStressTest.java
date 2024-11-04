@@ -2,7 +2,6 @@ import org.example.DavoHash512;
 import org.junit.Test;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -11,10 +10,6 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class DavoStressTest {
-
-    private static final int EXTREME_TEST_CASES = 25_000_000;  // höhere Anzahl an Testfällen
-    private static final int EXTREME_ENTROPY_SAMPLE_SIZE = 5_000_000;
-    private static final int MAX_BIT_FLIP_COUNT = 100;  // Maximale Anzahl an Bit-Änderungen
 
     // Extrem-zeitliche Konsistenzprüfung
     @Test
