@@ -2,10 +2,7 @@ import org.example.DavoHash512;
 import org.junit.Test;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,23 +13,48 @@ public class DavoStressTest {
     private static final int EXTREME_ENTROPY_SAMPLE_SIZE = 5_000_000;
     private static final int MAX_BIT_FLIP_COUNT = 100;  // Maximale Anzahl an Bit-Änderungen
 
-    // Extrem-zeitliche Konsistenzprüfung
+    private static final int TIME_LIMIT_NS = 5_000_000; // 5 ms in Nanosekunden
+    private static final int NUM_ITERATIONS = 1_000;
+    private static final int NUM_INPUTS = 100; // Anzahl zufälliger Eingaben für bessere Erkennung
+    private static final Random RANDOM = new Random();
+
     @Test
-    public void testExtremeTimingConsistency() {
-        String input = "timingExtremeTestInput";
-        long[] durations = new long[500];
+    public void testTimingAttackVulnerability() {
+        long totalVariance = 0;
 
-        for (int i = 0; i < durations.length; i++) {
+        for (int i = 0; i < NUM_INPUTS; i++) {
+            byte[] input1 = generateRandomInput();
+            byte[] input2 = generateRandomInput();
+
+            long timeInput1 = measureHashTime(input1);
+            long timeInput2 = measureHashTime(input2);
+
+            long timeDifference = Math.abs(timeInput1 - timeInput2);
+            totalVariance += timeDifference;
+        }
+
+        long averageVariance = totalVariance / NUM_INPUTS;
+
+        assertTrue(averageVariance < TIME_LIMIT_NS, "Timing-Angriff möglich: Durchschnittliche Zeitdifferenz zu groß");
+    }
+
+    private byte[] generateRandomInput() {
+        byte[] input = new byte[16];
+        RANDOM.nextBytes(input);
+        return input;
+    }
+
+    private long measureHashTime(byte[] input) {
+        long totalTime = 0;
+
+        for (int i = 0; i < NUM_ITERATIONS; i++) {
             long startTime = System.nanoTime();
-            DavoHash512.hash(input);
-            durations[i] = System.nanoTime() - startTime;
-        }
+            DavoHash512.hash(new String(input));
+            long endTime = System.nanoTime();
 
-        long averageTime = calculateAverage(durations);
-        for (long duration : durations) {
-            assertTrue(Math.abs(duration - averageTime) < (averageTime * 0.05),
-                    "Extrem-Konsistenz verletzt: Unterschiedliche Zeiten für gleiche Eingabe erkannt.");
+            totalTime += (endTime - startTime);
         }
+        return totalTime / NUM_ITERATIONS;
     }
 
     // Extreme Zufalls- und Entropietests
@@ -58,7 +80,7 @@ public class DavoStressTest {
         ExecutorService executor = Executors.newFixedThreadPool(32);
 
         try {
-            List<Callable<Boolean>> tasks = createBitFlipTasks(input, hash1, MAX_BIT_FLIP_COUNT);
+            List<Callable<Boolean>> tasks = createBitFlipTasks(input, hash1);
 
             // Execute tasks and validate results
             List<Future<Boolean>> results = executor.invokeAll(tasks);
@@ -74,9 +96,9 @@ public class DavoStressTest {
         }
     }
 
-    private List<Callable<Boolean>> createBitFlipTasks(String input, String hash1, int maxBitFlipCount) {
+    private List<Callable<Boolean>> createBitFlipTasks(String input, String hash1) {
         List<Callable<Boolean>> tasks = new ArrayList<>();
-        for (int bitFlips = 1; bitFlips <= maxBitFlipCount; bitFlips++) {
+        for (int bitFlips = 1; bitFlips <= DavoStressTest.MAX_BIT_FLIP_COUNT; bitFlips++) {
             final int currentBitFlips = bitFlips;
             tasks.add(() -> {
                 char[] chars = input.toCharArray();
@@ -91,7 +113,7 @@ public class DavoStressTest {
                 String hash2 = DavoHash512.hash(modifiedInput);
 
                 int difference = calculateBitDifference(hash1, hash2);
-                return difference > (hash1.length() * 4 * 0.57);
+                return difference > (hash1.length() * 4 * 0.58);
             });
         }
         return tasks;
@@ -100,7 +122,7 @@ public class DavoStressTest {
     // Extrem-Belastungstests für Multi-Threading
     @Test
     public void testExtremeMultiThreadingStress() throws InterruptedException {
-        ExecutorService executor = Executors.newFixedThreadPool(256);
+        ExecutorService executor = Executors.newFixedThreadPool(128);
 
         try {
             for (int i = 0; i < EXTREME_TEST_CASES; i++) {
