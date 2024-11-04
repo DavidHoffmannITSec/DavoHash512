@@ -1,14 +1,22 @@
-NO LICENSE
+# DavoHash512 License
 
-Copyright (c) 2024 David Hoffmann
+## Non-Commercial Use License
 
-All rights reserved. This code and any associated documentation are proprietary and confidential. Unauthorized copying, modification, distribution,
-and any other form of use of this software or any portion of it is strictly prohibited. The software is provided solely for personal, private,
-and non-commercial use by the author.
+This software, `DavoHash512`, is provided free of charge for personal, educational, and non-commercial purposes only. You are allowed to use,
+copy, modify, merge, publish, distribute, and/or sell copies of the Software, provided that:
 
-This software is provided "AS IS," without warranty of any kind, express or implied, including but not limited to the warranties of merchantability,
-fitness for a particular purpose, and non-infringement. In no event shall the author be liable for any claim, damages, or other liability, whether in an
-action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.
+1. **Non-Commercial Use**: You may not use this Software for commercial purposes. Any commercial application or service that incorporates this
+Software, or any derivative works based on it, is strictly prohibited without prior written permission from the author.
 
-Any form of public use, commercial use, distribution, or modification by anyone other than the author is strictly prohibited and subject to
-legal action.
+2. **Attribution**: If you distribute or use this Software in any capacity, you must provide appropriate credit to the author and include a copy
+of this license in any substantial portions of the Software.
+
+3. **No Warranty**: The Software is provided "as is", without warranty of any kind, express or implied, including but not limited to the
+warranties of merchantability, fitness for a particular purpose, and non-infringement. In no event shall the authors or copyright holders be
+liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection
+with the Software or the use or other dealings in the Software.
+
+4. **Termination**: This license will terminate automatically if you fail to comply with any of the above conditions. Upon termination, you must
+cease all use of the Software and destroy all copies, full or partial, of the Software.
+
+By using this Software, you acknowledge that you have read this license and agree to be bound by its terms.
