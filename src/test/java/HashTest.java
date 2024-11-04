@@ -1,5 +1,4 @@
 import org.example.DavoHash512;
-
 import org.junit.Test;
 import java.util.HashSet;
 import java.util.Random;
@@ -9,7 +8,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 
-
 public class HashTest {
 
     private static final int NUM_MAX_TEST_CASES = 10_000_000;
@@ -17,19 +15,20 @@ public class HashTest {
     private static final int MAX_BIT_FLIP_COUNT = 50;
     private static final int PARTIAL_MATCH_LENGTH = 32;
 
-
     @Test
     public void testPartialMatchAvoidance() {
         String input = "partialMatchTest";
-        String targetHash = DavoHash512.hash(input);
-        String partialTarget = targetHash.substring(0, PARTIAL_MATCH_LENGTH);
+        byte[] targetHashBytes = DavoHash512.hash(input);
+        String targetHashHex = DavoHash512.bytesToHex(targetHashBytes);
+        String partialTargetHex = targetHashHex.substring(0, PARTIAL_MATCH_LENGTH);
 
         boolean foundPartialMatch = false;
         for (int i = 0; i < 2_000_000; i++) {
             String randomInput = "test" + Math.random();
-            String hash = DavoHash512.hash(randomInput);
+            byte[] hashBytes = DavoHash512.hash(randomInput);
+            String hashHex = DavoHash512.bytesToHex(hashBytes);
 
-            if (hash.startsWith(partialTarget)) {
+            if (hashHex.startsWith(partialTargetHex)) {
                 foundPartialMatch = true;
                 break;
             }
@@ -37,7 +36,6 @@ public class HashTest {
         assertFalse(foundPartialMatch, "Eine zufällige Eingabe erzeugte eine Hash-Teilübereinstimmung.");
     }
 
-    // Erhöhte Kollisionstests mit komplexeren zufälligen Mustern
     @Test
     public void testEnhancedCollisionAvoidance() throws InterruptedException {
         Set<String> hashSet = new HashSet<>();
@@ -48,9 +46,10 @@ public class HashTest {
                 final int index = i;
                 executor.submit(() -> {
                     String randomInput = "complexInput" + index + Math.random();
-                    String hash = DavoHash512.hash(randomInput);
+                    byte[] hashBytes = DavoHash512.hash(randomInput);
+                    String hashHex = DavoHash512.bytesToHex(hashBytes);
                     synchronized (hashSet) {
-                        assertTrue(hashSet.add(hash), "Kollision erkannt: Zwei verschiedene Eingaben führten zum gleichen Hash.");
+                        assertTrue(hashSet.add(hashHex), "Kollision erkannt: Zwei verschiedene Eingaben führten zum gleichen Hash.");
                     }
                 });
             }
@@ -64,26 +63,24 @@ public class HashTest {
         assertTrue(executor.isTerminated(), "Die erweiterten Kollisionstests wurden nicht innerhalb der maximalen Zeit abgeschlossen.");
     }
 
-    // Leistungstests mit extremen Ultra-Großeingaben bis 1 GB
     @Test
     public void testPerformanceOnUltraMaxInput() {
         final int maxInputSize = 1_000_000_000; // 1 GB Eingabegröße
         String largeInput = "x".repeat(maxInputSize);
 
         long startTime = System.nanoTime();
-        String hash = DavoHash512.hash(largeInput);
+        byte[] hashBytes = DavoHash512.hash(largeInput);
         long duration = System.nanoTime() - startTime;
 
-        assertNotNull(hash, "Hash sollte für extrem große Eingaben nicht null sein.");
+        assertNotNull(hashBytes, "Hash sollte für extrem große Eingaben nicht null sein.");
         assertTrue(duration < 300_000_000_000L, "Hashing extrem großer Eingaben sollte innerhalb von 300 Sekunden abgeschlossen sein.");
         System.out.println("Hashing-Zeit für 1 GB große Eingabe: " + duration / 1_000_000_000.0 + " Sekunden");
     }
 
-    // Test für Avalanche-Effekt mit extremen Bit-Änderungen und zufälliger Zeichenumstellung
     @Test
     public void testExtremeAvalancheEffect() throws InterruptedException {
         String input = "ExtremeAvalancheInput";
-        String hash1 = DavoHash512.hash(input);
+        byte[] hash1 = DavoHash512.hash(input);
         Random random = new Random();
         ExecutorService executor = Executors.newFixedThreadPool(64);
 
@@ -97,9 +94,9 @@ public class HashTest {
                         chars[index] = (char) (chars[index] ^ (1 << random.nextInt(7)));
                     }
                     String modifiedInput = new String(chars);
-                    String hash2 = DavoHash512.hash(modifiedInput);
+                    byte[] hash2 = DavoHash512.hash(modifiedInput);
                     int difference = calculateBitDifference(hash1, hash2);
-                    assertTrue(difference > (hash1.length() * 4 * 0.90), "Extremer Avalanche-Effekt-Test fehlgeschlagen.");
+                    assertTrue(difference > (hash1.length * 8 * 0.90), "Extremer Avalanche-Effekt-Test fehlgeschlagen.");
                 });
             }
         } finally {
@@ -111,19 +108,18 @@ public class HashTest {
         }
     }
 
-    // Langlebiger Birthday-Attack-Test mit doppelter Stichprobengröße
     @Test
     public void testExtremeBirthdayAttackResistance() {
         Set<String> hashSet = new HashSet<>();
 
         for (int i = 0; i < BIRTHDAY_ATTACK_SAMPLE_SIZE * 2; i++) {
             String randomInput = "birthdayAttack" + i + Math.random();
-            String hash = DavoHash512.hash(randomInput);
-            assertTrue(hashSet.add(hash), "Kollision erkannt: Zwei zufällige Eingaben erzeugten denselben Hash.");
+            byte[] hashBytes = DavoHash512.hash(randomInput);
+            String hashHex = DavoHash512.bytesToHex(hashBytes);
+            assertTrue(hashSet.add(hashHex), "Kollision erkannt: Zwei zufällige Eingaben erzeugten denselben Hash.");
         }
     }
 
-    // Stresstest mit einzigartigen Multibyte- und Sonderzeichen-Mustern
     @Test
     public void testExtremeSpecialCharactersHandling() {
         String[] specialInputs = {
@@ -132,25 +128,23 @@ public class HashTest {
         };
 
         for (String input : specialInputs) {
-            String hash = DavoHash512.hash(input);
-            assertNotNull(hash, "Hash sollte für Multibyte-Eingaben nicht null sein.");
-            assertFalse(hash.isEmpty(), "Hash sollte nicht leer sein.");
+            byte[] hashBytes = DavoHash512.hash(input);
+            assertNotNull(hashBytes, "Hash sollte für Multibyte-Eingaben nicht null sein.");
+            assertTrue(hashBytes.length > 0, "Hash sollte nicht leer sein.");
         }
     }
 
-    // Extrem schnelle, aufeinanderfolgende Eingaben zum Prüfen der Parallelverarbeitung
     @Test
     public void testRapidSequentialHashing() {
         for (int i = 0; i < 100_000; i++) {
             String input = "rapidTestInput" + i;
-            String hash = DavoHash512.hash(input);
+            byte[] hashBytes = DavoHash512.hash(input);
 
-            assertNotNull(hash, "Hash sollte nicht null sein bei sequentieller Eingabe.");
-            assertFalse(hash.isEmpty(), "Hash sollte nicht leer sein.");
+            assertNotNull(hashBytes, "Hash sollte nicht null sein bei sequentieller Eingabe.");
+            assertTrue(hashBytes.length > 0, "Hash sollte nicht leer sein.");
         }
     }
 
-    // Großer Sliding Windows Test für konsistente Veränderungen in Eingabe-Fenstern
     @Test
     public void testExtremeSlidingWindowsEffect() {
         String baseInput = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
@@ -158,28 +152,26 @@ public class HashTest {
 
         for (int i = 0; i < baseInput.length() - 5; i++) {
             String window = baseInput.substring(i, i + 6);
-            String hash = DavoHash512.hash(window);
-
-            assertTrue(hashes.add(hash), "Sliding Windows Test fehlgeschlagen: Zwei unterschiedliche Fenster erzeugten denselben Hash.");
+            byte[] hashBytes = DavoHash512.hash(window);
+            String hashHex = DavoHash512.bytesToHex(hashBytes);
+            assertTrue(hashes.add(hashHex), "Sliding Windows Test fehlgeschlagen: Zwei unterschiedliche Fenster erzeugten denselben Hash.");
         }
     }
 
-    // Test auf Widerstand gegen Länge-Erweiterungsangriffe mit gestapelten Anhängen
     @Test
     public void testStackedLengthExtensionResistance() {
         String input = "secureBaseData";
-        String hash1 = DavoHash512.hash(input);
+        byte[] hash1 = DavoHash512.hash(input);
 
         String extendedInput = input;
         for (int i = 0; i < 10; i++) {
             extendedInput += "extension" + i;
-            String hash2 = DavoHash512.hash(extendedInput);
+            byte[] hash2 = DavoHash512.hash(extendedInput);
 
-            assertNotEquals(hash1, hash2, "Längenverlängerungsangriff erfolgreich.");
+            assertNotEquals(DavoHash512.bytesToHex(hash1), DavoHash512.bytesToHex(hash2), "Längenverlängerungsangriff erfolgreich.");
         }
     }
 
-    // Zufällige Wiederholungs- und Spiegelmuster für Eingaben testen
     @Test
     public void testRandomRepeatedPatterns() {
         Random random = new Random();
@@ -194,21 +186,17 @@ public class HashTest {
             String mirroredPattern = new StringBuilder(repeatedPattern).reverse().toString();
             String randomInput = repeatedPattern + mirroredPattern;
 
-            String hash = DavoHash512.hash(randomInput);
-            assertTrue(hashSet.add(hash), "Kollision erkannt: Zwei zufällige Muster führten zum gleichen Hash.");
+            byte[] hashBytes = DavoHash512.hash(randomInput);
+            String hashHex = DavoHash512.bytesToHex(hashBytes);
+            assertTrue(hashSet.add(hashHex), "Kollision erkannt: Zwei zufällige Muster führten zum gleichen Hash.");
         }
     }
 
-    // Helper-Methode zur Berechnung der Bitunterschiede zwischen zwei Hashes
-    private int calculateBitDifference(String hash1, String hash2) {
-        byte[] bytes1 = hash1.getBytes();
-        byte[] bytes2 = hash2.getBytes();
-
+    private int calculateBitDifference(byte[] hash1, byte[] hash2) {
         int differences = 0;
-        for (int i = 0; i < bytes1.length; i++) {
-            differences += Integer.bitCount(bytes1[i] ^ bytes2[i]);
+        for (int i = 0; i < hash1.length; i++) {
+            differences += Integer.bitCount(hash1[i] ^ hash2[i]);
         }
-
         return differences;
     }
 }

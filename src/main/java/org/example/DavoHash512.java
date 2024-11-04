@@ -1,6 +1,6 @@
 package org.example;
 
-import java.io.StringReader;
+import java.io.*;
 import java.text.Normalizer;
 
 public class DavoHash512 {
@@ -65,9 +65,7 @@ public class DavoHash512 {
             0x142929670A0E6E70L, 0x27B70A8546D22FFCL, 0x2E1B21385C26C926L, 0x4D2C6DFC5AC42AEDL
     };
 
-    private static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
-
-    public static String hash(String input) {
+    public static byte[] hash(String input) {
         if (input == null) input = "";
 
         String normalized = Normalizer.normalize(input, Normalizer.Form.NFC);
@@ -80,7 +78,49 @@ public class DavoHash512 {
         }
 
         doubleFinalization(state);
-        return buildHashString(state);
+        return buildHashBytes(state);
+    }
+
+    public static byte[] hashFile(File file)  {
+        long[] state = initializeState((int) file.length());
+
+        try (FileInputStream fis = new FileInputStream(file)) {
+            byte[] buffer = new byte[BLOCK_SIZE];
+            int bytesRead;
+
+            while ((bytesRead = fis.read(buffer)) != -1) {
+                // Wenn es der letzte Block ist, müssen wir padInput aufrufen
+                if (bytesRead < BLOCK_SIZE) {
+                    processBlock(toLongArray(padInput(buffer, bytesRead)), state);
+                } else {
+                    // Volle Blöcke ohne Padding verarbeiten
+                    processBlock(toLongArray(buffer), state);
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        doubleFinalization(state);
+        return buildHashBytes(state);
+    }
+
+    public static String bytesToHex(byte[] hashBytes) {
+        StringBuilder hexString = new StringBuilder(hashBytes.length * 2);
+        for (byte b : hashBytes) {
+            hexString.append(String.format("%02x", b));
+        }
+        return hexString.toString();
+    }
+
+    public static byte[] hexToBytes(String hex) {
+        int length = hex.length();
+        byte[] bytes = new byte[length / 2];
+        for (int i = 0; i < length; i += 2) {
+            bytes[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
+                    + Character.digit(hex.charAt(i + 1), 16));
+        }
+        return bytes;
     }
 
     private static void processStream(StringReader reader, long[] state) throws Exception {
@@ -235,14 +275,14 @@ public class DavoHash512 {
         return (value >>> bits) | (value << (WORD_SIZE - bits));
     }
 
-    private static String buildHashString(long[] state) {
-        char[] hashChars = new char[STATE_SIZE * 16];
+    private static byte[] buildHashBytes(long[] state) {
+        byte[] hashBytes = new byte[STATE_SIZE * 8];
         for (int i = 0; i < state.length; i++) {
             long value = state[i];
-            for (int j = 0; j < 16; j++) {
-                hashChars[i * 16 + j] = HEX_CHARS[(int) ((value >> (j * 4)) & 0xF)];
+            for (int j = 0; j < 8; j++) {
+                hashBytes[i * 8 + j] = (byte) (value >> (56 - j * 8));
             }
         }
-        return new String(hashChars);
+        return hashBytes;
     }
 }
